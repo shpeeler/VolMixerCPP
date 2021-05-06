@@ -139,7 +139,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="VolMixerCPP.cpp" />
+    <ClCompile Include="volmixer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="volmixer_helper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
