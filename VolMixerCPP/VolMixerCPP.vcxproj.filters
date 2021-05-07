@@ -23,5 +23,11 @@
     <ClInclude Include="volmixer_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="volmixer_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="volmixer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

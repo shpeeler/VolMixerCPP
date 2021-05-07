@@ -6,18 +6,20 @@
 #include <Audioclient.h>
 #include <audiopolicy.h>
 #include <functiondiscoverykeys_devpkey.h>
+#include <processthreadsapi.h>
+#include <Psapi.h>
 #include <list>
 #include <string>
 #include <utility>
-#include <processthreadsapi.h>
-#include <Psapi.h>
 #include <map>
 
 using std::string;
+using std::wstring;
 using std::list;
 using std::map;
+using std::pair;
 
-namespace volmixer_helper
+namespace volmixer
 {
 	class VolMixerHelper
 	{
@@ -25,7 +27,7 @@ namespace volmixer_helper
 	private:
 
 		string device_name_;
-		
+
 		HRESULT TryGetIMMDevice(IMMDevice** pp_device) const
 		{
 			HRESULT hr = S_OK;
@@ -84,7 +86,7 @@ namespace volmixer_helper
 			return E_POINTER;
 		}
 
-		HRESULT TryGetISimpleAudioVolumeByProcessId(UINT process_id, ISimpleAudioVolume** pp_simple_audio_volume) const
+		HRESULT TryGetISimpleAudioVolumeByProcessId(const UINT process_id, ISimpleAudioVolume** pp_simple_audio_volume) const
 		{
 			CComPtr<IMMDevice> p_device;
 			HRESULT hr = TryGetIMMDevice(&p_device);
@@ -192,13 +194,13 @@ namespace volmixer_helper
 			return hr;
 		}
 
-	public: // TODO: @are - refactor public methods to return booleans, add logging
+	public: // TODO:logging
 
 		explicit VolMixerHelper(string device_name) : device_name_(std::move(device_name))
 		{
 		}
-
-		HRESULT TrySetApplicationVolume(UINT process_id, float volume_level)
+		
+		HRESULT TrySetApplicationVolume(const UINT process_id, const float volume_level) const
 		{
 			HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
@@ -213,10 +215,10 @@ namespace volmixer_helper
 			return hr;
 		}
 
-		HRESULT TryGetProcessIdsByApplicationName(string application_name, list<long>* p_process_ids)
+		HRESULT TryGetProcessIdsByApplicationName(const string& application_name, list<long>* p_process_ids) const
 		{
 			HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-			std::list<long> process_ids = std::list<long>();
+			list<long> process_ids = list<long>();
 
 			if (SUCCEEDED(hr))
 			{
@@ -238,8 +240,8 @@ namespace volmixer_helper
 
 							if (GetModuleBaseName(h_process, h_module, process_name, sizeof(process_name) / sizeof(TCHAR)))
 							{
-								std::wstring ws(process_name);
-								std::string each_process_name(ws.begin(), ws.end());
+								wstring ws(process_name);
+								string each_process_name(ws.begin(), ws.end());
 
 								if ((each_process_name == application_name) == true)
 								{
@@ -257,16 +259,37 @@ namespace volmixer_helper
 			return hr;
 		}
 
-		HRESULT TryCreateProcessMapping(map<string, string> pin_mapping, map<string, long>* process_mapping)
+		HRESULT TryCreateProcessMapping(const map<string, string>& pin_map, map<string, list<long>>* process_map) const
 		{
 			HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+			CComPtr<IMMDevice> p_device;
+			if (SUCCEEDED(hr))
+			{
+				hr = TryGetIMMDevice(&p_device);
+			}
 
+			for(auto const& each_mapping : pin_map)
+			{
+				string pin_name = each_mapping.first;
+				string application_name = each_mapping.second;
+
+				if (application_name.empty() == true)
+				{
+					continue;
+				}
+
+				list<long> result_process_ids = list<long>();
+				hr = TryGetProcessIdsByApplicationName(application_name, &result_process_ids);
+				if (SUCCEEDED(hr))
+				{
+					process_map->insert(pair<string, list<long>>(application_name, result_process_ids));
+				}
+			}
 
 			CoUninitialize();
 			return hr;
 		}
-
 
 	};
 }
