@@ -139,9 +139,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="serialport.cpp" />
     <ClCompile Include="volmixer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="serialport.h" />
     <ClInclude Include="volmixer.h" />
     <ClInclude Include="volmixer_config.h" />
     <ClInclude Include="volmixer_helper.h" />

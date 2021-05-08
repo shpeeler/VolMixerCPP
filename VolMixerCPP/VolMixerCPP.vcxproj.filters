@@ -18,6 +18,12 @@
     <ClCompile Include="volmixer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="serialport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="volmixer_helper.h">
@@ -27,6 +33,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="volmixer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="serialport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

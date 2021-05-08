@@ -1,24 +1,63 @@
-#include "volmixer_config.h"
-#include "volmixer_helper.h"
 #include "volmixer.h"
+#include "volmixer_config.h"
+#include "serialport.h"
+#include <utility>
 
-int main()
+using volmixer::VolMixer;
+
+VolMixer::VolMixer(VolMixerConfig vol_mixer_config)
+	:
+	vol_mixer_config_(std::move(vol_mixer_config)),
+	serial_port(SerialPort(vol_mixer_config.port_name, vol_mixer_config.baudrate))
 {
-	auto volmixer_helper = volmixer::VolMixerHelper("SPDIF Interface (2- FiiO USB DAC-E10)");
-
-	std::map<string, string> pin_map = std::map<string, string>();
-	pin_map.insert(std::pair<string, string>("Pin_0", "Discord.exe"));
-	pin_map.insert(std::pair<string, string>("Pin_1", "Spotify.exe"));
-	pin_map.insert(std::pair<string, string>("Pin_2", "chrome.exe"));
-
-
-	std::map<string, list<long>> process_map;
-	HRESULT hr = volmixer_helper.TryCreateProcessMapping(pin_map, &process_map);
-	auto vol_mixer_config = volmixer::VolMixerConfig(L"COM3", 9600, 50, "SPDIF Interface (2- FiiO USB DAC-E10)", pin_map, process_map);
-
-	auto vol_mixer = volmixer::VolMixer(vol_mixer_config);
-
-	vol_mixer.Run();
-	
-	return hr;
 }
+
+void VolMixer::Run()
+{
+	if (this->serial_port.IsConnected() == false)
+	{
+		// log
+		return;
+	}
+
+	char buffer[MAX_DATA_LENGTH];
+	this->serial_port.ReadSerialPort(buffer, MAX_DATA_LENGTH);
+
+	
+	this->serial_port.CloseSerial();
+}
+
+
+/*
+ * HANDLE serial_handle = CreateFile(vol_mixer_config_.port_name, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+			if (serial_handle == INVALID_HANDLE_VALUE)
+			{
+				CloseHandle(serial_handle);
+				return nullptr;
+			}
+
+			HANDLE serial_handle = TryOpenPort();
+			if (serial_handle == nullptr)
+			{
+				return;
+			}
+
+			DCB serial_params = { 0 };
+			serial_params.DCBlength = sizeof(serial_params);
+
+			if (GetCommState(serial_handle, &serial_params) == false)
+			{
+				CloseHandle(serial_handle);
+				return;
+			}
+			
+			serial_params.BaudRate = vol_mixer_config_.baudrate;
+
+			if (SetCommState(serial_handle, &serial_params) == false)
+			{
+				CloseHandle(serial_handle);
+				return;
+			}
+			
+			CloseHandle(serial_handle);
+ */
