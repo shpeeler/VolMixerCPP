@@ -73,9 +73,8 @@ bool SerialPort::TryReadSerialPort(const char* buffer, unsigned buff_size)
 	}
 
 	DWORD wait = WaitForSingleObject(this->serial_handle, INFINITE);
-	switch (wait)
+	if (wait == WAIT_OBJECT_0)
 	{
-	case WAIT_OBJECT_0:
 		DWORD mask;
 		DWORD read;
 		if (GetCommMask(this->serial_handle, &mask) == false)
@@ -94,17 +93,15 @@ bool SerialPort::TryReadSerialPort(const char* buffer, unsigned buff_size)
 			//  error in comm
 			return false;
 		}
-		
+
 		if (ReadFile(this->serial_handle, (void**)buffer, buff_size, nullptr, &ov) == false)
 		{
 			// unable to read
 			return false;
 		}
-		
+
 		// log
 		return true;
-	default:
-		break;
 	}
 
 	return false;
