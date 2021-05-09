@@ -22,23 +22,43 @@ void VolMixer::Run()
 
 	while (true)
 	{
+		//
+		// read serial input
+		//
+		
 		char buffer[MAX_DATA_LENGTH];
 		if (this->serial_port.TryReadSerialPort(buffer, MAX_DATA_LENGTH) == false)
 		{
 			continue;
 		}
 
+		//
+		// parse serial input
+		//
+		
 		string result_string;
 		if (TryParseBuffer(buffer, result_string) == false)
 		{
 			continue;
 		}
 
+		//
+		// serial read can mix up the input order, therefore: ensure order is as expected
+		//	d => data
+		//	p => pin
+		//	v => volume
+		//				-> dddd
+		//				   ppvv	
+		
 		if (TryEnsureOrder(result_string) == false)
 		{
 			continue;
 		}
 
+		//
+		// get all necessary from serial input
+		//
+		
 		string application;
 		list<long> process_ids;
 		float volume;
@@ -47,10 +67,11 @@ void VolMixer::Run()
 			continue;
 		}
 
+		// self-repair mechanism - if no process-ids are found, try to reload them
 		if (process_ids.empty())
 		{
 			list<long> new_process_ids;
-			if (SUCCEEDED(this->vol_mixer_helper_.TryGetProcessIdsByApplicationName(application, &new_process_ids)) == false) // TODO: return bool, not hresult from pub methods
+			if (SUCCEEDED(this->vol_mixer_helper_.TryGetProcessIdsByApplicationName(application, &new_process_ids)) == false)
 			{
 				// no proc ids found after reload
 				continue;
@@ -59,6 +80,7 @@ void VolMixer::Run()
 			this->vol_mixer_config_.process_map[application] = new_process_ids; // TODO: test
 		}
 
+		// ensure that all processes present in mapping exist
 		for (auto each_process_id : process_ids)
 		{
 			HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, each_process_id);
@@ -70,6 +92,11 @@ void VolMixer::Run()
 					continue;
 				}
 			}
+
+			//
+			// self-repair mechanism
+			// if process does not exist, reload it
+			//
 
 			list<long> new_process_ids;
 			if (SUCCEEDED(this->vol_mixer_helper_.TryGetProcessIdsByApplicationName(application, &new_process_ids)) == false) 
@@ -83,6 +110,10 @@ void VolMixer::Run()
 			break;
 		}
 
+		//
+		// set audio-volume for each process
+		//
+		
 		for (auto each_process_id : process_ids)
 		{
 			if (SUCCEEDED(this->vol_mixer_helper_.TrySetApplicationVolume(each_process_id, volume)) == false)
