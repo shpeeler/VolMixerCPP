@@ -34,7 +34,7 @@ namespace volmixer
 
 		HRESULT TryGetProcessIds(list<long>* p_process_ids) const;
 
-	public: // TODO:logging
+	public: // TODO: return bool, not hresult from pub methods
 
 		explicit VolMixerHelper(string device_name);
 		

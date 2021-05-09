@@ -61,7 +61,26 @@ void VolMixer::Run()
 
 		for (auto each_process_id : process_ids)
 		{
-			// TODO: check if process exists, if false reload
+			HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, each_process_id);
+			if (h_process != nullptr)
+			{
+				if (WaitForSingleObject(h_process, 0)) // process exists false
+				{
+					CloseHandle(h_process);
+					continue;
+				}
+			}
+
+			list<long> new_process_ids;
+			if (SUCCEEDED(this->vol_mixer_helper_.TryGetProcessIdsByApplicationName(application, &new_process_ids)) == false) 
+			{
+				// no proc ids found after reload
+				continue;
+			}
+			process_ids = new_process_ids;
+			this->vol_mixer_config_.process_map[application] = new_process_ids; // TODO: test
+			
+			break;
 		}
 
 		for (auto each_process_id : process_ids)
@@ -84,7 +103,7 @@ bool VolMixer::TryGetInfoFromSerial(const string value, string& application, lis
 	{
 		return false;
 	}
-	
+
 	string result_application = result_pin_kvp->second;
 	if (result_application.empty() == true)
 	{
@@ -107,11 +126,11 @@ bool VolMixer::TryGetInfoFromSerial(const string value, string& application, lis
 	{
 		return false;
 	}
-	
+
 	application = result_application;
 	process_ids = result_process_ids;
 	volume = result_vol;
-	
+
 	return true;
 }
 
@@ -152,6 +171,6 @@ bool VolMixer::TryParseBuffer(char buffer[MAX_DATA_LENGTH], string& result_strin
 			break;
 		}
 	}
-	
+
 	return result_string.length() == 4;
 }
