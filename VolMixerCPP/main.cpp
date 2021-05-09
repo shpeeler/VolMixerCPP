@@ -14,7 +14,7 @@ int main()
 
 	std::map<string, list<long>> process_map;
 	HRESULT hr = volmixer_helper.TryCreateProcessMapping(pin_map, &process_map);
-	auto vol_mixer_config = volmixer::VolMixerConfig(L"COM3", 9600, 50, "SPDIF Interface (2- FiiO USB DAC-E10)", pin_map, process_map);
+	auto vol_mixer_config = volmixer::VolMixerConfig("COM3", 9600, 50, "SPDIF Interface (2- FiiO USB DAC-E10)", pin_map, process_map);
 
 	auto vol_mixer = volmixer::VolMixer(vol_mixer_config);
 

@@ -40,6 +40,7 @@ SerialPort::SerialPort(const char* port_name, const int baud_rate)
 	if (SetCommMask(this->serial_handle, EV_RXCHAR) == false)
 	{
 		//
+		return;
 	}
 	
 	// log
