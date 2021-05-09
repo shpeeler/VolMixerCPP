@@ -12,11 +12,14 @@ private:
     bool is_connected;
     COMSTAT status;
     DWORD errors;
+    DWORD event_mask;
+    OVERLAPPED ov = { 0 };
+
 public:
     explicit SerialPort(const char* port_name, int baud_rate);
     ~SerialPort();
 
-    int ReadSerialPort(const char* buffer, unsigned int buf_size);
+    bool TryReadSerialPort(const char* buffer, unsigned int buf_size);
     bool IsConnected();
     void CloseSerial() const;
 };

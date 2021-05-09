@@ -15,7 +15,6 @@ namespace volmixer
 
 	public:
 		explicit VolMixer(VolMixerConfig vol_mixer_config);
-		~VolMixer();
 
 		void Run();
 	};

@@ -23,7 +23,7 @@ SerialPort::SerialPort(const char* port_name, const int baud_rate)
 	DCB serial_parameters = { 0 };
 	if (GetCommState(this->serial_handle, &serial_parameters) == false)
 	{
-		// log
+		// log get last error
 		return;
 	}
 
@@ -31,19 +31,20 @@ SerialPort::SerialPort(const char* port_name, const int baud_rate)
 	serial_parameters.ByteSize = 8;
 	serial_parameters.Parity = NOPARITY;
 
-	if(SetCommState(this->serial_handle, &serial_parameters) == false)
+	if (SetCommState(this->serial_handle, &serial_parameters) == false)
 	{
-		// log
+		// log get last error
 		return;
 	}
 
 	if (SetCommMask(this->serial_handle, EV_RXCHAR) == false)
 	{
-		//
+		// log get last error
 		return;
 	}
-	
 	// log
+
+	ov.hEvent = CreateEvent(nullptr, true, FALSE, nullptr);
 
 	this->is_connected = true;
 	PurgeComm(this->serial_handle, PURGE_RXCLEAR);
@@ -58,11 +59,55 @@ SerialPort::~SerialPort()
 	}
 }
 
-int SerialPort::ReadSerialPort(const char* buffer, unsigned buf_size)
+bool SerialPort::TryReadSerialPort(const char* buffer, unsigned buff_size)
 {
+	if (WaitCommEvent(this->serial_handle, &event_mask, &ov) == false)
+	{
+		if ((GetLastError() == ERROR_IO_PENDING) == false)
+		{
+			return false;
+		}
 
-	
-	return 0;
+		// log getlasterrror if error io pending 
+		return false;
+	}
+
+	DWORD wait = WaitForSingleObject(this->serial_handle, INFINITE);
+	switch (wait)
+	{
+	case WAIT_OBJECT_0:
+		DWORD mask;
+		DWORD read;
+		if (GetCommMask(this->serial_handle, &mask) == false)
+		{
+			// unable to get comm mask
+			return false;
+		}
+		if ((mask & EV_RXCHAR) == false)
+		{
+			// no read signal
+			return false;
+		}
+
+		if (GetOverlappedResult(this->serial_handle, &this->ov, &read, FALSE) == false)
+		{
+			//  error in comm
+			return false;
+		}
+		
+		if (ReadFile(this->serial_handle, (void**)buffer, buff_size, nullptr, &ov) == false)
+		{
+			// unable to read
+			return false;
+		}
+		
+		// log
+		return true;
+	default:
+		break;
+	}
+
+	return false;
 }
 
 bool SerialPort::IsConnected()
