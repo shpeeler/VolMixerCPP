@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <iostream>
 
-constexpr int MAX_DATA_LENGTH = 255;
+constexpr int MAX_DATA_LENGTH = 8;
 
 class SerialPort
 {
@@ -13,13 +13,13 @@ private:
     COMSTAT status;
     DWORD errors;
     DWORD event_mask;
-    OVERLAPPED ov = { 0 };
+    OVERLAPPED overlapped = { 0 };
 
 public:
     explicit SerialPort(const char* port_name, int baud_rate);
     ~SerialPort();
 
-    bool TryReadSerialPort(const char* buffer, unsigned int buf_size);
+    bool TryReadSerialPort(const char* buffer, const unsigned int buffer_size);
     bool IsConnected();
     void CloseSerial() const;
 };

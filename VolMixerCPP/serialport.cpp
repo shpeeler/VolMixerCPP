@@ -12,13 +12,9 @@ SerialPort::SerialPort(const char* port_name, const int baud_rate)
 			// file not found
 			return;
 		}
-		else
-		{
-			// generic error
-			return;
-		}
+		// generic error
+		return;
 	}
-
 
 	DCB serial_parameters = { 0 };
 	if (GetCommState(this->serial_handle, &serial_parameters) == false)
@@ -44,7 +40,7 @@ SerialPort::SerialPort(const char* port_name, const int baud_rate)
 	}
 	// log
 
-	ov.hEvent = CreateEvent(nullptr, true, FALSE, nullptr);
+	overlapped.hEvent = CreateEvent(nullptr, true, FALSE, nullptr);
 
 	this->is_connected = true;
 	PurgeComm(this->serial_handle, PURGE_RXCLEAR);
@@ -59,9 +55,9 @@ SerialPort::~SerialPort()
 	}
 }
 
-bool SerialPort::TryReadSerialPort(const char* buffer, unsigned buff_size)
+bool SerialPort::TryReadSerialPort(const char* buffer, const unsigned int buffer_size)
 {
-	if (WaitCommEvent(this->serial_handle, &event_mask, &ov) == false)
+	if (WaitCommEvent(this->serial_handle, &event_mask, &overlapped) == false)
 	{
 		if ((GetLastError() == ERROR_IO_PENDING) == false)
 		{
@@ -88,13 +84,13 @@ bool SerialPort::TryReadSerialPort(const char* buffer, unsigned buff_size)
 			return false;
 		}
 
-		if (GetOverlappedResult(this->serial_handle, &this->ov, &read, FALSE) == false)
+		if (GetOverlappedResult(this->serial_handle, &this->overlapped, &read, FALSE) == false)
 		{
 			//  error in comm
 			return false;
 		}
 
-		if (ReadFile(this->serial_handle, (void**)buffer, buff_size, nullptr, &ov) == false)
+		if (ReadFile(this->serial_handle, (void**)buffer, buffer_size, nullptr, &this->overlapped) == false)
 		{
 			// unable to read
 			return false;
