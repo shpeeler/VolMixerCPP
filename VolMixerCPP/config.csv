@@ -1,0 +1,10 @@
+MaxRetries;50
+PortName;COM3
+BaudRate;9600
+DeviceName;SPDIF Interface (2- FiiO USB DAC-E10)
+14;Discord.exe
+15;Spotify.exe
+16;chrome.exe
+17;
+20;
+21;

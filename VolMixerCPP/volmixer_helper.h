@@ -13,6 +13,10 @@
 #include <utility>
 #include <map>
 
+#include "spdlog/sinks/basic_file_sink.h"
+using std::shared_ptr;
+using spdlog::logger;
+
 using std::string;
 using std::wstring;
 using std::list;
@@ -26,6 +30,7 @@ namespace volmixer
 
 	private:
 
+		shared_ptr<logger> logger_;
 		string device_name_;
 
 		HRESULT TryGetIMMDevice(IMMDevice** pp_device) const;
@@ -34,15 +39,15 @@ namespace volmixer
 
 		HRESULT TryGetProcessIds(list<long>* p_process_ids) const;
 
-	public: // TODO: return bool, not hresult from pub methods
+	public:
 
-		explicit VolMixerHelper(string device_name);
+		explicit VolMixerHelper(shared_ptr<logger>& logger, string device_name);
 		
-		HRESULT TrySetApplicationVolume(const UINT process_id, const float volume_level) const;
+		bool TrySetApplicationVolume(const UINT process_id, const float volume_level) const;
+		
+		bool TryGetProcessIdsByApplicationName(const string& application_name, list<long>* p_process_ids) const;
 
-		HRESULT TryGetProcessIdsByApplicationName(const string& application_name, list<long>* p_process_ids) const;
-
-		HRESULT TryCreateProcessMapping(const map<string, string>& pin_map, map<string, list<long>>* process_map) const;
+		bool TryCreateProcessMapping(const map<string, string>& pin_map, map<string, list<long>>* process_map) const;
 
 	};
 }

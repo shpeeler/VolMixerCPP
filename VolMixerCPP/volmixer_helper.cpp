@@ -2,10 +2,20 @@
 
 using volmixer::VolMixerHelper;
 
-VolMixerHelper::VolMixerHelper(string device_name) : device_name_(std::move(device_name))
+/// <summary>
+/// creates an instance of VolMixerHelper
+/// </summary>
+/// <param name="device_name">the full audio-device name | Device-FriendlyName</param>
+/// <param name="logger">reference to spdlog::logger</param>
+VolMixerHelper::VolMixerHelper(shared_ptr<logger>& logger, string device_name) : logger_(logger), device_name_(std::move(device_name))
 {
 }
 
+/// <summary>
+/// tries to get an IMMDevice interface
+/// </summary>
+/// <param name="pp_device">pointer to an IMMDevice interface</param>
+/// <returns>true if successful, false if not</returns>
 HRESULT VolMixerHelper::TryGetIMMDevice(IMMDevice** pp_device) const
 {
 	HRESULT hr = S_OK;
@@ -64,6 +74,12 @@ HRESULT VolMixerHelper::TryGetIMMDevice(IMMDevice** pp_device) const
 	return E_POINTER;
 }
 
+/// <summary>
+/// tries to get the ISimpleAudioVolume interface of an application by its process-id
+/// </summary>
+/// <param name="process_id">process-id</param>
+/// <param name="pp_simple_audio_volume">pointer to an ISimpleAudioVolume interface</param>
+/// <returns>true if successful, false if not</returns>
 HRESULT VolMixerHelper::TryGetISimpleAudioVolumeByProcessId(const UINT process_id, ISimpleAudioVolume** pp_simple_audio_volume) const
 {
 	CComPtr<IMMDevice> p_device;
@@ -122,6 +138,11 @@ HRESULT VolMixerHelper::TryGetISimpleAudioVolumeByProcessId(const UINT process_i
 	return E_POINTER;
 }
 
+/// <summary>
+/// tries to get all ids of processes currently running in the audio-mixer-session
+/// </summary>
+/// <param name="p_process_ids">reference to process-ids</param>
+/// <returns>true if successful, false if not</returns>
 HRESULT VolMixerHelper::TryGetProcessIds(list<long>* p_process_ids) const
 {
 	CComPtr<IMMDevice> p_device;
@@ -172,7 +193,13 @@ HRESULT VolMixerHelper::TryGetProcessIds(list<long>* p_process_ids) const
 	return hr;
 }
 
-HRESULT VolMixerHelper::TrySetApplicationVolume(const UINT process_id, const float volume_level) const
+/// <summary>
+/// tries to set the volume-level for a application by it's process-id
+/// </summary>
+/// <param name="process_id">process-id</param>
+/// <param name="volume_level">volume-level</param>
+/// <returns>true if successful, false if not</returns>
+bool VolMixerHelper::TrySetApplicationVolume(const UINT process_id, const float volume_level) const
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
@@ -180,14 +207,20 @@ HRESULT VolMixerHelper::TrySetApplicationVolume(const UINT process_id, const flo
 	hr = TryGetISimpleAudioVolumeByProcessId(process_id, &p_simple_audio_volume);
 	if (SUCCEEDED(hr))
 	{
-		return p_simple_audio_volume->SetMasterVolume(volume_level / 100, nullptr);
+		return SUCCEEDED(p_simple_audio_volume->SetMasterVolume(volume_level / 100, nullptr));
 	}
 
 	CoUninitialize();
-	return hr;
+	return SUCCEEDED(hr);
 }
 
-HRESULT VolMixerHelper::TryGetProcessIdsByApplicationName(const string& application_name, list<long>* p_process_ids) const
+/// <summary>
+/// tries to get all process-ids for a application by it's name
+/// </summary>
+/// <param name="application_name">application name</param>
+/// <param name="p_process_ids">process-ids</param>
+/// <returns>true if successful, false if not</returns>
+bool VolMixerHelper::TryGetProcessIdsByApplicationName(const string& application_name, list<long>* p_process_ids) const
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 	list<long> process_ids = list<long>();
@@ -228,19 +261,28 @@ HRESULT VolMixerHelper::TryGetProcessIdsByApplicationName(const string& applicat
 	}
 
 	CoUninitialize();
-	return hr;
+	return SUCCEEDED(hr);
 }
 
-HRESULT VolMixerHelper::TryCreateProcessMapping(const map<string, string>& pin_map, map<string, list<long>>* process_map) const
+/// <summary>
+/// tries to create a map
+///		-> first: application name
+///		-> process-ids
+/// </summary>
+/// <param name="pin_map">pin-mapping <pin-id, application name></param>
+/// <param name="process_map">process-mapping <application name, process-ids></param>
+/// <returns>true if successful, false if not</returns>
+bool VolMixerHelper::TryCreateProcessMapping(const map<string, string>& pin_map, map<string, list<long>>* process_map) const
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-
+	
 	CComPtr<IMMDevice> p_device;
 	if (SUCCEEDED(hr))
 	{
 		hr = TryGetIMMDevice(&p_device);
 	}
 
+	bool successful = false;
 	for (auto const& each_mapping : pin_map)
 	{
 		string pin_name = each_mapping.first;
@@ -252,13 +294,13 @@ HRESULT VolMixerHelper::TryCreateProcessMapping(const map<string, string>& pin_m
 		}
 
 		list<long> result_process_ids = list<long>();
-		hr = TryGetProcessIdsByApplicationName(application_name, &result_process_ids);
-		if (SUCCEEDED(hr))
+		successful = TryGetProcessIdsByApplicationName(application_name, &result_process_ids);
+		if (SUCCEEDED(hr) && successful)
 		{
 			process_map->insert(pair<string, list<long>>(application_name, result_process_ids));
 		}
 	}
 
 	CoUninitialize();
-	return hr;
+	return (SUCCEEDED(hr) && successful);
 }
